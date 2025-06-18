@@ -126,10 +126,10 @@
   <div class="add-btn" onclick="openEditor()">+</div>
   <div class="app" id="notesContainer"></div>
 
-  <div class="overlay" id="editor">
-    <textarea id="editorText" placeholder="Notiz eingeben..."></textarea>
-    <button class="save-btn" onclick="saveNote()">Speichern</button>
-  </div>
+  <div class="overlay" id="editor" style="flex-direction: column;">
+  <button class="save-btn" onclick="saveNote()">Speichern</button>
+  <textarea id="editorText" placeholder="Notiz eingeben..." style="flex:1; margin-top: 1rem;"></textarea>
+</div>
 
   <div class="overlay" id="viewer">
     <button class="close-btn" onclick="closeViewer()">✕</button>
