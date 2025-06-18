@@ -84,21 +84,20 @@
       outline: none;
       margin-bottom: 1rem;
     }
-    .save-btn, .close-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  padding: 0.5rem 1.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  border-radius: 25px;
-  background-color: #28a745;
-  color: white;
-}    
+    .save-btn {
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 25px;
+      background-color: #28a745;
+      color: white;
+      margin-bottom: 1rem;
     }
     .close-btn {
-      align-self: flex-start;
+      position: absolute;
+      top: 20px;
+      left: 20px;
       background: none;
       border: none;
       font-size: 1.5rem;
@@ -127,9 +126,9 @@
   <div class="app" id="notesContainer"></div>
 
   <div class="overlay" id="editor" style="flex-direction: column;">
-  <button class="save-btn" onclick="saveNote()">Speichern</button>
-  <textarea id="editorText" placeholder="Notiz eingeben..." style="flex:1; margin-top: 1rem;"></textarea>
-</div>
+    <button class="save-btn" onclick="saveNote()">Speichern</button>
+    <textarea id="editorText" placeholder="Notiz eingeben..."></textarea>
+  </div>
 
   <div class="overlay" id="viewer">
     <button class="close-btn" onclick="closeViewer()">✕</button>
