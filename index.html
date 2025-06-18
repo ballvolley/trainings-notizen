@@ -61,6 +61,23 @@
       cursor: pointer;
       z-index: 1000;
     }
+    .export-import-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: white;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+      border: none;
+    }
     .overlay {
       position: fixed;
       top: 0;
@@ -122,6 +139,11 @@
 </head>
 <body>
   <div class="add-btn" onclick="openEditor()">+</div>
+
+  <!-- Neuer Import/Export-Button -->
+  <button class="export-import-btn" onclick="document.getElementById('importFile').click()" title="Importieren / Exportieren">📁</button>
+  <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)">
+
   <div class="app" id="notesContainer"></div>
 
   <div class="overlay" id="editor" style="flex-direction: column;">
@@ -212,7 +234,42 @@
       document.getElementById('viewer').style.display = 'none';
     }
 
-    renderNotes();
-  </script>
-</body>
-</html>
+    function handleImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (Array.isArray(data.notes) && Array.isArray(data.titles)) {
+            notes = data.notes;
+            titles = data.titles;
+            saveToStorage();
+            renderNotes();
+            alert('Notizen erfolgreich importiert!');
+          } else {
+            alert('Ungültige Datei!');
+          }
+        } catch (error) {
+          alert('Fehler beim Importieren!');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportData() {
+      const dataStr = JSON.stringify({ notes, titles }, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'notizen-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Rechtsklick auf blauen Button = Export
+    document.querySelector('.export-import-btn').addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      exportData();
