@@ -8,14 +8,16 @@
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
     .app { 
-      padding: 2rem 2rem 2rem 6rem;
+      padding: 1rem; 
       display: flex; 
       flex-wrap: wrap; 
       gap: 1rem; 
+      justify-content: center;
     }
     .note-card {
       position: relative;
-      width: 250px;
+      width: 90vw;
+      max-width: 250px;
       height: 180px;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -38,20 +40,22 @@
       left: 10px;
       font-weight: bold;
       cursor: pointer;
+      max-width: 80%;
+      overflow-wrap: break-word;
     }
     .note-title[contenteditable]:focus {
       outline: 1px dashed gray;
     }
     .add-btn {
       position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 40px;
-      height: 40px;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       background-color: red;
       color: white;
-      font-size: 24px;
+      font-size: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -67,7 +71,7 @@
       background-color: white;
       display: none;
       flex-direction: column;
-      padding: 2rem;
+      padding: 1rem;
       z-index: 1001;
     }
     .overlay textarea {
@@ -78,10 +82,9 @@
       color: black;
       resize: none;
       outline: none;
+      margin-bottom: 1rem;
     }
     .save-btn, .close-btn {
-      margin-top: 1rem;
-      align-self: flex-end;
       padding: 0.5rem 1rem;
       font-size: 1rem;
       cursor: pointer;
@@ -95,18 +98,17 @@
     }
     #viewContent {
       white-space: pre-wrap;
-      padding-left: 2rem;
+      padding: 1rem 0 0 1rem;
       font-family: Arial, sans-serif;
       font-size: 12pt;
       color: black;
       overflow-y: auto;
       flex: 1;
-      max-height: 80vh;
     }
     #viewer {
       display: none;
       flex-direction: column;
-      padding: 2rem;
+      padding: 1rem;
       z-index: 1001;
       overflow-y: auto;
     }
@@ -127,20 +129,13 @@
   </div>
 
   <script>
-    let notes = [];
-    let titles = [];
+    let notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    let titles = JSON.parse(localStorage.getItem('titles') || '[]');
     let editIndex = null;
 
-    function saveToLocalStorage() {
+    function saveToStorage() {
       localStorage.setItem('notes', JSON.stringify(notes));
       localStorage.setItem('titles', JSON.stringify(titles));
-    }
-
-    function loadFromLocalStorage() {
-      const savedNotes = localStorage.getItem('notes');
-      const savedTitles = localStorage.getItem('titles');
-      notes = savedNotes ? JSON.parse(savedNotes) : [];
-      titles = savedTitles ? JSON.parse(savedTitles) : [];
     }
 
     function renderNotes() {
@@ -153,7 +148,7 @@
         const title = titles[index] || 'Titel';
         card.innerHTML = `
           <button class="edit-btn" onclick="editNote(${index})">✎</button>
-          <div onclick="viewNote(${index})" style="cursor:pointer; height: 100%; padding-top: 1.5rem; overflow-y: auto;">
+          <div onclick="viewNote(${index})" style="cursor:pointer; height: 100%; padding-top: 1.5rem;">
             <div>${note.length > 100 ? note.substring(0, 100) + '...' : note}</div>
           </div>
           <div class="note-title" contenteditable onblur="updateTitle(this.innerText, ${index})">${title}</div>
@@ -182,21 +177,23 @@
           notes.splice(editIndex, 1);
           titles.splice(editIndex, 1);
         }
-      } else {
-        if (editIndex !== null) {
-          notes[editIndex] = text;
-        } else {
-          notes.push(text);
-          titles.push('Titel');
-        }
+        saveToStorage();
+        renderNotes();
+        return;
       }
-      saveToLocalStorage();
+      if (editIndex !== null) {
+        notes[editIndex] = text;
+      } else {
+        notes.push(text);
+        titles.push('Titel');
+      }
+      saveToStorage();
       renderNotes();
     }
 
     function updateTitle(newTitle, index) {
       titles[index] = newTitle.trim() || 'Titel';
-      saveToLocalStorage();
+      saveToStorage();
       renderNotes();
     }
 
@@ -209,10 +206,7 @@
       document.getElementById('viewer').style.display = 'none';
     }
 
-    window.onload = () => {
-      loadFromLocalStorage();
-      renderNotes();
-    };
+    renderNotes();
   </script>
 </body>
 </html>
