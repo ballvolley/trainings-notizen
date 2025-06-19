@@ -2,21 +2,21 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notizen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trainings Notizen</title>
   <style>
-    * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .app { 
-      padding: 1rem; 
-      display: flex; 
-      flex-wrap: wrap; 
-      gap: 1rem; 
+    .app {
+      padding: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
       justify-content: center;
     }
     .note-card {
       position: relative;
-      width: 250px;
+      width: 100%;
+      max-width: 250px;
       height: 180px;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -24,14 +24,14 @@
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .note-card .edit-btn {
+    .edit-btn {
       position: absolute;
       top: 5px;
       left: 5px;
-      cursor: pointer;
       background: none;
       border: none;
       font-size: 16px;
+      cursor: pointer;
     }
     .note-title {
       position: absolute;
@@ -39,237 +39,141 @@
       left: 10px;
       font-weight: bold;
       cursor: pointer;
-      max-width: 80%;
-      overflow-wrap: break-word;
-    }
-    .note-title[contenteditable]:focus {
-      outline: 1px dashed gray;
     }
     .add-btn {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
+      top: 20px;
+      left: 20px;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 30px;
       background-color: red;
       color: white;
-      font-size: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       cursor: pointer;
       z-index: 1000;
-    }
-    .export-import-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: #007bff;
-      color: white;
-      font-size: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 1000;
-      border: none;
     }
     .overlay {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: 100vh;
       background-color: white;
       display: none;
       flex-direction: column;
-      padding: 1rem;
+      padding: 2rem;
       z-index: 1001;
     }
     .overlay textarea {
       flex: 1;
       width: 100%;
-      font-family: Arial, sans-serif;
       font-size: 12pt;
-      color: black;
+      margin-top: 1rem;
       resize: none;
-      outline: none;
-      margin-bottom: 1rem;
     }
     .save-btn {
+      align-self: flex-start;
       padding: 0.5rem 1.5rem;
       font-size: 1rem;
-      cursor: pointer;
       border: none;
-      border-radius: 25px;
-      background-color: #28a745;
+      border-radius: 20px;
+      background-color: #4CAF50;
       color: white;
-      margin-bottom: 1rem;
-    }
-    .close-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
       cursor: pointer;
     }
-    #viewContent {
-      white-space: pre-wrap;
-      padding: 1rem 0 0 1rem;
-      font-family: Arial, sans-serif;
-      font-size: 12pt;
-      color: black;
-      overflow-y: auto;
-      flex: 1;
-    }
-    #viewer {
-      display: none;
-      flex-direction: column;
-      padding: 1rem;
-      z-index: 1001;
-      overflow-y: auto;
+    @media (max-width: 600px) {
+      .note-card {
+        width: 90%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="add-btn" onclick="openEditor()">+</div>
-
-  <!-- Neuer Import/Export-Button -->
-  <button class="export-import-btn" onclick="document.getElementById('importFile').click()" title="Importieren / Exportieren">📁</button>
-  <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)">
-
+  <button class="add-btn" onclick="openEditor()">+ Notiz</button>
   <div class="app" id="notesContainer"></div>
 
-  <div class="overlay" id="editor" style="flex-direction: column;">
+  <div class="overlay" id="editor">
     <button class="save-btn" onclick="saveNote()">Speichern</button>
     <textarea id="editorText" placeholder="Notiz eingeben..."></textarea>
   </div>
 
-  <div class="overlay" id="viewer">
-    <button class="close-btn" onclick="closeViewer()">✕</button>
-    <div id="viewContent"></div>
-  </div>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  <script>
-    let notes = JSON.parse(localStorage.getItem('notes') || '[]');
-    let titles = JSON.parse(localStorage.getItem('titles') || '[]');
-    let editIndex = null;
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNU4g4KM-GnKL_dGRiKlRgIHFRhC1yEek",
+      authDomain: "trainings-notizen.firebaseapp.com",
+      projectId: "trainings-notizen",
+      storageBucket: "trainings-notizen.appspot.com",
+      messagingSenderId: "648079967340",
+      appId: "1:648079967340:web:78bd44358809ce4de4c449",
+      databaseURL: "https://trainings-notizen-default-rtdb.europe-west1.firebasedatabase.app"
+    };
 
-    function saveToStorage() {
-      localStorage.setItem('notes', JSON.stringify(notes));
-      localStorage.setItem('titles', JSON.stringify(titles));
-    }
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const notesRef = ref(db, "notes");
+
+    let currentNotes = [];
+let editingId = null;
+
+
+    onValue(notesRef, (snapshot) => {
+      const data = snapshot.val();
+      currentNotes = [];
+      if (data) {
+        Object.keys(data).forEach((key) => {
+          currentNotes.push({ id: key, text: data[key].text });
+        });
+      }
+      renderNotes();
+    });
 
     function renderNotes() {
-      const container = document.getElementById('notesContainer');
-      container.innerHTML = '';
-      notes.forEach((note, index) => {
-        if (!note.trim()) return;
-        const card = document.createElement('div');
-        card.className = 'note-card';
-        const title = titles[index] || 'Titel';
+      const container = document.getElementById("notesContainer");
+      container.innerHTML = "";
+      currentNotes.forEach((note) => {
+        const card = document.createElement("div");
+        card.className = "note-card";
         card.innerHTML = `
-          <button class="edit-btn" onclick="editNote(${index})">✎</button>
-          <div onclick="viewNote(${index})" style="cursor:pointer; height: 100%; padding-top: 1.5rem;">
-            <div>${note.length > 100 ? note.substring(0, 100) + '...' : note}</div>
-          </div>
-          <div class="note-title" contenteditable onblur="updateTitle(this.innerText, ${index})">${title}</div>
+          <button class="edit-btn" onclick="editNote('${note.id}')">✎</button>
+          <div>${note.text.length > 100 ? note.text.slice(0, 100) + "..." : note.text}</div>
         `;
         container.appendChild(card);
       });
     }
 
     function openEditor() {
-      document.getElementById('editorText').value = '';
-      document.getElementById('editor').style.display = 'flex';
-      editIndex = null;
+      document.getElementById("editorText").value = "";
+      document.getElementById("editor").style.display = "flex";
+      editingId = null;
     }
 
-    function editNote(index) {
-      document.getElementById('editorText').value = notes[index];
-      document.getElementById('editor').style.display = 'flex';
-      editIndex = index;
+ function saveNote() {
+  const text = document.getElementById("editorText").value.trim();
+  if (text === "") return;
+
+  if (editingId) {
+    const updateRef = ref(db, `notes/${editingId}`);
+    set(updateRef, { text });
+  } else {
+    const newRef = push(notesRef);
+    set(newRef, { text });
+  }
+
+  document.getElementById("editor").style.display = "none";
+  editingId = null;
+}
+
+    function editNote(id) {
+      const note = currentNotes.find(n => n.id === id);
+      if (!note) return;
+      document.getElementById("editorText").value = note.text;
+      document.getElementById("editor").style.display = "flex";
+      editingId = id;
     }
-
-    function saveNote() {
-      const text = document.getElementById('editorText').value;
-      document.getElementById('editor').style.display = 'none';
-      if (text.trim() === '') {
-        if (editIndex !== null) {
-          notes.splice(editIndex, 1);
-          titles.splice(editIndex, 1);
-        }
-        saveToStorage();
-        renderNotes();
-        return;
-      }
-      if (editIndex !== null) {
-        notes[editIndex] = text;
-      } else {
-        notes.push(text);
-        titles.push('Titel');
-      }
-      saveToStorage();
-      renderNotes();
-    }
-
-    function updateTitle(newTitle, index) {
-      titles[index] = newTitle.trim() || 'Titel';
-      saveToStorage();
-      renderNotes();
-    }
-
-    function viewNote(index) {
-      document.getElementById('viewContent').innerText = notes[index];
-      document.getElementById('viewer').style.display = 'flex';
-    }
-
-    function closeViewer() {
-      document.getElementById('viewer').style.display = 'none';
-    }
-
-    function handleImport(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = JSON.parse(e.target.result);
-          if (Array.isArray(data.notes) && Array.isArray(data.titles)) {
-            notes = data.notes;
-            titles = data.titles;
-            saveToStorage();
-            renderNotes();
-            alert('Notizen erfolgreich importiert!');
-          } else {
-            alert('Ungültige Datei!');
-          }
-        } catch (error) {
-          alert('Fehler beim Importieren!');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function exportData() {
-      const dataStr = JSON.stringify({ notes, titles }, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'notizen-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Rechtsklick auf blauen Button = Export
-    document.querySelector('.export-import-btn').addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      exportData();
+  </script>
+</body>
+</html>
